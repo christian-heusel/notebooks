@@ -1,0 +1,24 @@
+apiVersion: kubeflow.org/v1beta1
+kind: Workspace
+metadata:
+  name: jupyterlab-workspace
+spec:
+  paused: false
+  kind: "jupyterlab"
+  podTemplate:
+    podMetadata:
+      labels: {}
+      annotations: {}
+    volumes:
+      home: "workspace-home-pvc"
+      data:
+        - pvcName: "workspace-data-pvc"
+          mountPath: "/data/my-data"
+          readOnly: false
+      secrets:
+        - secretName: "workspace-secret"
+          mountPath: "/secrets/my-secret"
+          defaultMode: 420 # same as 0644 in octal
+    options:
+      imageConfig: "jupyter-scipy:v1.10.0"
+      podConfig: "tiny_cpu"

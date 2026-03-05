@@ -1,0 +1,219 @@
+apiVersion: kubeflow.org/v1beta1
+kind: WorkspaceKind
+metadata:
+  name: jupyterlab
+spec:
+  spawner:
+    displayName: "JupyterLab Notebook"
+    description: "A Workspace which runs JupyterLab in a Pod"
+    hidden: false
+    deprecated: false
+    icon:
+      url: "https://jupyter.org/assets/favicons/apple-touch-icon-152x152.png"
+    logo:
+      url: "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg"
+  podTemplate:
+    podMetadata:
+      labels:
+        my-workspace-kind-label: "my-value"
+      annotations:
+        my-workspace-kind-annotation: "my-value"
+    serviceAccount:
+      name: "default-editor"
+    culling:
+      enabled: true
+      maxInactiveSeconds: 86400
+      activityProbe:
+        jupyter:
+          lastActivity: true
+    volumeMounts:
+      home: "/home/jovyan"
+    ports:
+      - id: "jupyterlab"
+        defaultDisplayName: "JupyterLab"
+        protocol: "HTTP"
+        httpProxy:
+          removePathPrefix: false
+          requestHeaders: {}
+    extraEnv:
+      - name: "NB_PREFIX"
+        value: |-
+          {{ httpPathPrefix "jupyterlab" }}
+    extraVolumeMounts:
+      - name: "dshm"
+        mountPath: "/dev/shm"
+    extraVolumes:
+      - name: "dshm"
+        emptyDir:
+          medium: "Memory"
+    securityContext:
+      fsGroup: 100
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      runAsNonRoot: true
+    options:
+      imageConfig:
+        spawner:
+          default: "jupyter-scipy:v1.10.0"
+        values:
+          - id: "jupyter-scipy:v1.8.0"
+            spawner:
+              displayName: "jupyter-scipy:v1.8.0"
+              description: "JupyterLab, with SciPy Packages"
+              labels:
+                - key: "python_version"
+                  value: "3.11.6"
+              ## NOTE: this option is hidden
+              hidden: true
+            redirect:
+              to: "jupyter-scipy:v1.9.2"
+              message:
+                level: "Info"
+                text: >
+                  This update does not introduce any breaking changes in Python packages from SciPy.
+                  However, the version of JupyterLab has been updated from 3.6.6 to 4.2.5.
+            spec:
+              image: "ghcr.io/kubeflow/kubeflow/notebook-servers/jupyter-scipy:v1.8.0"
+              imagePullPolicy: "IfNotPresent"
+              ports:
+                - id: "jupyterlab"
+                  port: 8888
+          - id: "jupyter-scipy:v1.9.2"
+            spawner:
+              displayName: "jupyter-scipy:v1.9.2"
+              description: "JupyterLab, with SciPy Packages"
+              labels:
+                - key: "python_version"
+                  value: "3.11.10"
+            redirect:
+              to: "jupyter-scipy:v1.10.0"
+              message:
+                level: "Info"
+                text: >
+                  This update does not introduce any breaking changes in Python packages from SciPy.
+            spec:
+              image: "ghcr.io/kubeflow/kubeflow/notebook-servers/jupyter-scipy:v1.9.2"
+              imagePullPolicy: "IfNotPresent"
+              ports:
+                - id: "jupyterlab"
+                  port: 8888
+          - id: "jupyter-scipy:v1.10.0"
+            spawner:
+              displayName: "jupyter-scipy:v1.10.0"
+              description: "JupyterLab, with SciPy Packages"
+              labels:
+                - key: "python_version"
+                  value: "3.11.11"
+            spec:
+              image: "ghcr.io/kubeflow/kubeflow/notebook-servers/jupyter-scipy:v1.10.0"
+              imagePullPolicy: "IfNotPresent"
+              ports:
+                - id: "jupyterlab"
+                  port: 8888
+          - id: "jupyter-pytorch-cuda-full:v1.9.2"
+            spawner:
+              displayName: "jupyter-pytorch-cuda-full:v1.9.2"
+              description: "JupyterLab, with PyTorch (CUDA), and Common Python Packages"
+              labels:
+                - key: "python_version"
+                  value: "3.11.10"
+                - key: "pytorch_version"
+                  value: "2.3.1"
+                - key: "cuda_version"
+                  value: "12.1"
+                - key: "nccl_version"
+                  value: "2.20.5"
+            redirect:
+              to: "jupyter-pytorch-cuda-full:v1.10.0"
+              message:
+                level: "Warning"
+                text: >
+                  This update changes the version of PyTorch from 2.3.1 to 2.5.1.
+                  This only breaking change in a common python package is xgboost, which updated from 1.7.6 to 2.1.4.
+            spec:
+              image: "ghcr.io/kubeflow/kubeflow/notebook-servers/jupyter-pytorch-cuda-full:v1.9.2"
+              imagePullPolicy: "IfNotPresent"
+              ports:
+                - id: "jupyterlab"
+                  port: 8888
+          - id: "jupyter-pytorch-cuda-full:v1.10.0"
+            spawner:
+              displayName: "jupyter-pytorch-cuda-full:v1.10.0"
+              description: "JupyterLab, with PyTorch (CUDA), and Common Python Packages"
+              labels:
+                - key: "python_version"
+                  value: "3.11.11"
+                - key: "pytorch_version"
+                  value: "2.5.1"
+                - key: "cuda_version"
+                  value: "12.4"
+                - key: "nccl_version"
+                  value: "2.21.5"
+            spec:
+              image: "ghcr.io/kubeflow/kubeflow/notebook-servers/jupyter-pytorch-cuda-full:v1.10.0"
+              imagePullPolicy: "IfNotPresent"
+              ports:
+                - id: "jupyterlab"
+                  port: 8888
+      podConfig:
+        spawner:
+          default: "tiny_cpu"
+        values:
+          - id: "tiny_cpu"
+            spawner:
+              displayName: "Tiny CPU"
+              description: "Pod with 0.1 CPU, 128 Mb RAM"
+              labels:
+                - key: "cpu"
+                  value: "100m"
+                - key: "memory"
+                  value: "128Mi"
+            spec:
+              affinity: {}
+              nodeSelector: {}
+              tolerations: []
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+          - id: "small_cpu"
+            spawner:
+              displayName: "Small CPU"
+              description: "Pod with 1 CPU, 2 GB RAM"
+              labels:
+                - key: "cpu"
+                  value: "1000m"
+                - key: "memory"
+                  value: "2Gi"
+            spec:
+              resources:
+                requests:
+                  cpu: 1000m
+                  memory: 2Gi
+          - id: "big_gpu"
+            spawner:
+              displayName: "Big GPU"
+              description: "Pod with 4 CPU, 16 GB RAM, and 1 GPU"
+              labels:
+                - key: "cpu"
+                  value: "4000m"
+                - key: "memory"
+                  value: "16Gi"
+                - key: "gpu"
+                  value: "1"
+            spec:
+              affinity: {}
+              nodeSelector: {}
+              resources:
+                requests:
+                  cpu: 4000m
+                  memory: 16Gi
+                limits:
+                  nvidia.com/gpu: 1
+              tolerations:
+                - key: "nvidia.com/gpu"
+                  operator: "Exists"
+                  effect: "NoSchedule"
