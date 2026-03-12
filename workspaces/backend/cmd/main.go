@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	application "github.com/kubeflow/notebooks/workspaces/backend/api"
@@ -117,6 +118,14 @@ func main() {
 		getEnvAsStr("SWAGGER_SCHEME", "http"),
 		"Scheme used in the Swagger UI (http or https)",
 	)
+
+	opts := zap.Options{
+		Development: true,
+	}
+	opts.BindFlags(flag.CommandLine)
+	flag.Parse()
+
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	// Override Swagger metadata with runtime config
 	if cfg.SwaggerEnabled {
