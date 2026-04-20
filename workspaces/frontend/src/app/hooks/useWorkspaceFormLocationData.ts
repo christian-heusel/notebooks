@@ -9,6 +9,7 @@ type WorkspaceFormLocationState = RouteStateMap['workspaceEdit'] | RouteStateMap
 interface WorkspaceFormLocationData {
   mode: WorkspaceFormMode;
   namespace: string;
+  namespacesLoaded: boolean;
   workspaceName?: string;
   workspaceKindName?: string;
 }
@@ -26,7 +27,7 @@ function getRouteStateIfMatch<K extends AppRouteKey>(
 }
 
 export function useWorkspaceFormLocationData(): WorkspaceFormLocationData {
-  const { selectedNamespace } = useNamespaceSelectorWrapper();
+  const { selectedNamespace, namespacesLoaded } = useNamespaceSelectorWrapper();
   const location = useTypedLocation<'workspaceEdit' | 'workspaceCreate'>();
   const routeKey = useCurrentRouteKey();
   const rawState = location.state as WorkspaceFormLocationState | undefined;
@@ -44,6 +45,7 @@ export function useWorkspaceFormLocationData(): WorkspaceFormLocationData {
     return {
       mode: 'update',
       namespace,
+      namespacesLoaded,
       workspaceName,
       workspaceKindName,
     };
@@ -56,6 +58,7 @@ export function useWorkspaceFormLocationData(): WorkspaceFormLocationData {
     return {
       mode: 'create',
       namespace,
+      namespacesLoaded,
     };
   }
 

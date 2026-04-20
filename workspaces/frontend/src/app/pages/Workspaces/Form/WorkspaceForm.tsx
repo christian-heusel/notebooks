@@ -72,7 +72,8 @@ const WorkspaceForm: React.FC = () => {
   const notification = useNotification();
   const { api } = useNotebookAPI();
 
-  const { mode, namespace, workspaceName, workspaceKindName } = useWorkspaceFormLocationData();
+  const { mode, namespace, namespacesLoaded, workspaceName, workspaceKindName } =
+    useWorkspaceFormLocationData();
   const [initialFormData, initialFormDataLoaded, initialFormDataError] = useWorkspaceFormData({
     namespace,
     workspaceName,
@@ -305,7 +306,7 @@ const WorkspaceForm: React.FC = () => {
     return <LoadError title="Failed to load workspace data" error={initialFormDataError} />;
   }
 
-  if (!initialFormDataLoaded) {
+  if (!initialFormDataLoaded || !namespacesLoaded || !namespace) {
     return <LoadingSpinner />;
   }
 
