@@ -16,6 +16,7 @@ import { WorkspaceFormPropertiesSecrets } from './WorkspaceFormPropertiesSecrets
 
 interface WorkspaceFormPropertiesSelectionProps {
   mode: WorkspaceFormMode;
+  namespace: string;
   selectedProperties: WorkspaceFormProperties;
   onSelect: (properties: WorkspaceFormProperties) => void;
   homeVolumeMountPath?: string;
@@ -23,7 +24,7 @@ interface WorkspaceFormPropertiesSelectionProps {
 
 const WorkspaceFormPropertiesSelection: React.FunctionComponent<
   WorkspaceFormPropertiesSelectionProps
-> = ({ mode, selectedProperties, onSelect, homeVolumeMountPath }) => {
+> = ({ mode, namespace, selectedProperties, onSelect, homeVolumeMountPath }) => {
   const [isDataVolumesExpanded, setIsDataVolumesExpanded] = useState(false);
   const [isSecretsExpanded, setIsSecretsExpanded] = useState(false);
 
@@ -104,6 +105,7 @@ const WorkspaceFormPropertiesSelection: React.FunctionComponent<
             </div>
             <FormGroup fieldId="home-volume-table" className="workspace-form__form-group--spaced">
               <WorkspaceFormPropertiesVolumes
+                namespace={namespace}
                 volumes={homeVolumeArray}
                 setVolumes={handleSetHomeVolume}
                 fixedMountPath={homeVolumeMountPath}
@@ -135,6 +137,7 @@ const WorkspaceFormPropertiesSelection: React.FunctionComponent<
                 className="workspace-form__form-group--spaced pf-v6-u-pl-lg"
               >
                 <WorkspaceFormPropertiesVolumes
+                  namespace={namespace}
                   volumes={selectedProperties.volumes}
                   setVolumes={(volumes) => onSelect({ ...selectedProperties, volumes })}
                   excludedPvcNames={homePvcNames}

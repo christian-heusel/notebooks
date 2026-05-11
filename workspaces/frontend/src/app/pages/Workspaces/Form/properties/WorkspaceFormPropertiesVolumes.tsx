@@ -28,7 +28,6 @@ import { CubeIcon } from '@patternfly/react-icons/dist/esm/icons/cube-icon';
 import { PvcsPVCListItem } from '~/generated/data-contracts';
 import { ConfirmModal } from '~/shared/components/ConfirmModal';
 import { useNotebookAPI } from '~/app/hooks/useNotebookAPI';
-import { useNamespaceSelectorWrapper } from '~/app/hooks/useNamespaceSelectorWrapper';
 import usePVCs from '~/app/hooks/usePVCs';
 import { WorkspacesPodVolumeMountValue } from '~/app/types';
 import {
@@ -41,6 +40,7 @@ import { VolumesAttachModal } from './volumes/VolumesAttachModal';
 import { VolumesCreateModal } from './volumes/VolumesCreateModal';
 
 interface WorkspaceFormPropertiesVolumesProps {
+  namespace?: string;
   volumes: WorkspacesPodVolumeMountValue[];
   setVolumes: (volumes: WorkspacesPodVolumeMountValue[]) => void;
   fixedMountPath?: string; // For home volume only
@@ -50,6 +50,7 @@ interface WorkspaceFormPropertiesVolumesProps {
 const NUM_TABLE_COLUMNS = 5; // expand toggle + PVC Name + Mount Path + Read-only Access + Actions
 
 export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVolumesProps> = ({
+  namespace = '',
   volumes,
   setVolumes,
   fixedMountPath,
@@ -67,7 +68,6 @@ export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVol
   const [expandedVolumes, setExpandedVolumes] = useState<Set<string>>(new Set());
   const { pvcs: availablePVCs, pvcLoadError } = usePVCs();
   const { api } = useNotebookAPI();
-  const { selectedNamespace } = useNamespaceSelectorWrapper();
 
   const openDetachModal = useCallback((index: number) => {
     setDeleteIndex(index);
@@ -83,11 +83,11 @@ export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVol
       return;
     }
     if (!volumes[deleteIndex].isAttached) {
-      await api.pvc.deletePvc(selectedNamespace, volumes[deleteIndex].pvcName);
+      await api.pvc.deletePvc(namespace, volumes[deleteIndex].pvcName);
     }
     setDeleteIndex(null);
     setVolumes(volumes.filter((_, i) => i !== deleteIndex));
-  }, [deleteIndex, volumes, setVolumes, api.pvc, selectedNamespace]);
+  }, [deleteIndex, volumes, setVolumes, api.pvc, namespace]);
 
   const mountedPaths = useMemo(() => new Set(volumes.map((v) => v.mountPath)), [volumes]);
 
@@ -445,7 +445,7 @@ export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVol
         onAttach={handleAttachPVC}
         fixedMountPath={fixedMountPath}
         excludedPvcNames={allExcludedPvcNames}
-        namespace={selectedNamespace}
+        namespace={namespace}
       />
 
       <VolumesCreateModal
@@ -457,7 +457,7 @@ export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVol
         fixedMountPath={fixedMountPath}
         volumeToEdit={editIndex !== null ? volumes[editIndex] : undefined}
         onVolumeEdited={handleSaveEdit}
-        namespace={selectedNamespace}
+        namespace={namespace}
       />
     </>
   );
