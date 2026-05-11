@@ -57,6 +57,7 @@ export interface VolumesCreateModalProps {
   volumeToEdit?: WorkspacesPodVolumeMountValue;
   /** Called when a volume is saved in edit mode */
   onVolumeEdited?: (mountPath: string, readOnly: boolean) => void;
+  namespace?: string;
 }
 
 export const VolumesCreateModal: React.FC<VolumesCreateModalProps> = ({
@@ -68,8 +69,9 @@ export const VolumesCreateModal: React.FC<VolumesCreateModalProps> = ({
   fixedMountPath,
   volumeToEdit,
   onVolumeEdited,
+  namespace,
 }) => {
-  const { storageClasses, storageClassLoadError } = useStorageClasses();
+  const { storageClasses, storageClassLoadError } = useStorageClasses(namespace);
 
   const isEditMode = !!volumeToEdit;
 

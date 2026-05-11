@@ -42,6 +42,7 @@ export interface VolumesAttachModalProps {
   fixedMountPath?: string;
   /** PVC names already mounted in the other volume section (home or data) */
   excludedPvcNames?: Set<string>;
+  namespace?: string;
 }
 
 const isRWO = (pvc: PvcsPVCListItem): boolean =>
@@ -57,11 +58,12 @@ export const VolumesAttachModal: React.FC<VolumesAttachModalProps> = ({
   mountedPaths,
   fixedMountPath,
   excludedPvcNames,
+  namespace,
 }) => {
   // ── Data fetching ───────────────────────────────────────────────────────
 
   const { pvcs: availablePVCs, pvcsLoaded, pvcLoadError, refreshPVCs } = usePVCs();
-  const { storageClasses } = useStorageClasses();
+  const { storageClasses } = useStorageClasses(namespace);
 
   // ── Form state ───────────────────────────────────────────────────────────
 

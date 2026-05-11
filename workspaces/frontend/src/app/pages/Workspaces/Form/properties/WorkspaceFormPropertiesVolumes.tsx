@@ -445,6 +445,7 @@ export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVol
         onAttach={handleAttachPVC}
         fixedMountPath={fixedMountPath}
         excludedPvcNames={allExcludedPvcNames}
+        namespace={selectedNamespace}
       />
 
       <VolumesCreateModal
@@ -456,6 +457,7 @@ export const WorkspaceFormPropertiesVolumes: React.FC<WorkspaceFormPropertiesVol
         fixedMountPath={fixedMountPath}
         volumeToEdit={editIndex !== null ? volumes[editIndex] : undefined}
         onVolumeEdited={handleSaveEdit}
+        namespace={selectedNamespace}
       />
     </>
   );

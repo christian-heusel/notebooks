@@ -149,7 +149,7 @@ describe('Volumes Management - Attach and Create', () => {
       mockModArchResponse(mockPVCs),
     ).as('listPVCs');
 
-    cy.intercept('GET', `/api/${NOTEBOOKS_API_VERSION}/storageclasses`, {
+    cy.intercept('GET', `/api/${NOTEBOOKS_API_VERSION}/storageclasses*`, {
       data: mockStorageClasses,
     }).as('listStorageClasses');
 
@@ -240,6 +240,14 @@ describe('Volumes Management - Attach and Create', () => {
   });
 
   describe('Create Volume Modal', () => {
+    it('should include namespaceFilter in storage classes request', () => {
+      volumesManagement.clickCreateVolume();
+
+      cy.wait('@listStorageClasses').then((interception) => {
+        expect(interception.request.url).to.include(`namespaceFilter=${mockNamespace.name}`);
+      });
+    });
+
     it('should open create volume modal', () => {
       volumesManagement.clickCreateVolume();
       volumesCreateModal.assertModalVisible();

@@ -44,8 +44,31 @@ describe('useStorageClasses', () => {
     await waitForNextUpdate();
 
     expect(listStorageClasses).toHaveBeenCalledTimes(1);
+    expect(listStorageClasses).toHaveBeenCalledWith(undefined);
     expect(result.current.storageClasses).toEqual(mockClasses);
     expect(result.current.storageClassLoadError).toBeNull();
+  });
+
+  it('passes namespaceFilter when namespace is provided', async () => {
+    const mockClasses = [
+      { name: 'standard', displayName: 'Standard', canUse: true, description: '' },
+    ];
+    const listStorageClasses = jest.fn().mockResolvedValue({ data: mockClasses });
+
+    mockUseNotebookAPI.mockReturnValue({
+      api: { storageClasses: { listStorageClasses } } as unknown as NotebookApis,
+      apiAvailable: true,
+      refreshAllAPI: jest.fn(),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useStorageClasses('kubeflow-user-example-com'),
+    );
+    await waitForNextUpdate();
+
+    expect(result.current.storageClasses).toEqual(mockClasses);
+    expect(result.current.storageClassLoadError).toBeNull();
+    expect(listStorageClasses).toHaveBeenCalledWith({ namespaceFilter: 'kubeflow-user-example-com' });
   });
 
   it('returns empty list and user-facing error message when fetch fails', async () => {
