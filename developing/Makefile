@@ -33,7 +33,7 @@ check-tilt:
 .PHONY: check-helm
 check-helm:
 	@if ! command -v helm >/dev/null 2>&1; then \
-		if [ "$$ENABLE_FAKE_GPU" = "true" ]; then \
+		if [ "$$ENABLE_FAKE_GPU" = "true" ] || [ "$$ENABLE_FAKE_GPU_NVML" = "true" ]; then \
 			echo "ERROR: helm is required for ENABLE_FAKE_GPU=true. Please install helm first:"; \
 			echo "  https://helm.sh/docs/intro/install/"; \
 			exit 1; \

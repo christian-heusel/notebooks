@@ -119,6 +119,9 @@ ENABLE_METRICS_SERVER=true make tilt-up
 
 # OPTION 4: run with simulated GPUs enabled (schedule GPU workspaces without hardware)
 ENABLE_FAKE_GPU=true make tilt-up
+
+# OPTION 5: as OPTION 4, plus realistic in-pod nvidia-smi via nvml-mock (needs a cluster recreate)
+ENABLE_FAKE_GPU_NVML=true make tilt-up
 ```
 
 What this does:
@@ -276,6 +279,34 @@ kubectl exec <workspace-pod> -- nvidia-smi
 > [!NOTE]
 >
 > FGO provides a fake `nvidia-smi` and `nvidia.com/gpu` scheduling only — there is no real device. Do not co-install it alongside a real NVIDIA GPU operator or device plugin.
+
+#### Realistic in-pod `nvidia-smi` with nvml-mock (optional)
+
+FGO's in-pod `nvidia-smi` is a limited fake. For a **realistic, profile-accurate** GPU inside the workspace pod — a real `libnvidia-ml.so` so `nvidia-smi` and DCGM return proper values — layer NVIDIA's [nvml-mock](https://github.com/NVIDIA/k8s-test-infra/blob/main/docs/guides/runai-fgo/README.md) ("Mokka") on top with a second, additive flag:
+
+```bash
+cd developing
+ENABLE_FAKE_GPU_NVML=true make tilt-up
+```
+
+`ENABLE_FAKE_GPU_NVML=true` implies `ENABLE_FAKE_GPU=true`. It installs nvml-mock into `gpu-operator`, routes the pool to it (`backend: mock`, FGO `builtinProfiles` off so Mokka owns the profile ConfigMaps), and makes Mokka simulate a real NVIDIA A100 at the driver level.
+
+> [!IMPORTANT]
+>
+> Real NVML **inside ordinary GPU pods** (not just Mokka's own DaemonSet) relies on containerd **NRI** injection, which `developing/kind-1-35.yaml` now enables. A pre-existing cluster only picks this up on **recreate** — run `make tilt-down && ENABLE_FAKE_GPU_NVML=true make tilt-up` the first time. NRI injects cluster-wide; a pod opts out with the annotation `nvml-mock.nvidia.com/inject: "false"`.
+
+Verify:
+
+```bash
+# Mokka's DaemonSet pod always has real NVML
+kubectl exec -n gpu-operator ds/nvml-mock -- nvidia-smi
+
+# The profile ConfigMaps exist in FGO's namespace
+kubectl get cm gpu-profile-a100 -n gpu-operator -o name
+
+# With NRI active, a GPU workspace pod's nvidia-smi is realistic too
+kubectl exec <workspace-pod> -- nvidia-smi
+```
 
 ### Tilt - Clean Up
 

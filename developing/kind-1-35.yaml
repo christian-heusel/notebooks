@@ -11,6 +11,16 @@ kubeadmConfigPatches:
       extraArgs:
         "service-account-issuer": "kubernetes.default.svc"
         "service-account-signing-key-file": "/etc/kubernetes/pki/sa.key"
+# Enable the containerd NRI API. This is inert on its own (no plugins are
+# registered by default), so it does not affect the standard dev flow. It is
+# required only by the ENABLE_FAKE_GPU_NVML=true path, where nvml-mock ("Mokka")
+# registers an NRI plugin to inject a real libnvidia-ml.so into GPU pods. An
+# existing cluster only picks this up on recreate (make tilt-down && tilt-up).
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.nri.v1.nri"]
+      disable = false
+      socket_path = "/var/run/nri/nri.sock"
 nodes:
 - role: control-plane
   image: kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f

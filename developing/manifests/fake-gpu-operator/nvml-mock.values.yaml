@@ -1,0 +1,68 @@
+# Helm values for NVIDIA's nvml-mock ("Mokka") in the Tilt dev cluster.
+#
+# nvml-mock complements the fake-gpu-operator (FGO): FGO fakes GPUs at the
+# Kubernetes API level (scheduling + a limited fake `nvidia-smi`), while Mokka
+# simulates at the *driver* level. It ships a real `libnvidia-ml.so`, so
+# `nvidia-smi`, DCGM and the GPU Operator validator return realistic,
+# profile-accurate data.
+#
+# Consumed by developing/scripts/setup-fake-gpu-operator.sh only on the extra
+# opt-in path (ENABLE_FAKE_GPU_NVML=true), layered on top of ENABLE_FAKE_GPU.
+#
+# See NVIDIA/k8s-test-infra docs/guides/runai-fgo/README.md — this mirrors that
+# recipe, reduced to Kubeflow's single worker.
+
+# Profile + count must match the FGO "integration" pool (fgo.nvml.values.yaml):
+# both describe the same simulated hardware.
+gpu:
+  profile: a100
+  count: 1
+
+  # Time-varying metrics so a scheduled GPU workspace looks "alive": otherwise
+  # temperature/power/utilization are static profile values. `pattern: burst`
+  # swings GPU utilization between gpu_min and gpu_max on a fixed period, with
+  # temperature/power tracking it — handy for exercising dashboards, autoscaling
+  # signals, or just seeing nvidia-smi move. Observe with a repeated:
+  #   nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,power.draw --format=csv
+  dynamicMetrics:
+    enabled: true
+    utilization:
+      pattern: burst
+      gpu_min: 0
+      gpu_max: 100
+      burst_period_sec: 30
+    temperature:
+      base_c: 45
+      variance_c: 3
+      ramp_c: 20
+      ramp_period_sec: 120
+
+# Emit the seven `gpu-profile-<profile>` ConfigMaps in the exact shape FGO's
+# loader reads (name `gpu-profile-<profile>`, data key `profile.yaml`), into
+# FGO's own release namespace. FGO does a direct Get by name in its OWN
+# namespace — there is no label-selector or cross-namespace fallback — so
+# `targetNamespace` MUST equal FGO's namespace (gpu-operator). This also
+# requires FGO's `builtinProfiles.enabled=false` (set in fgo.nvml.values.yaml)
+# to avoid a Helm cross-release ownership conflict on those seven names.
+integrations:
+  fakeGpuOperator:
+    enabled: true
+    targetNamespace: gpu-operator
+
+# Restrict the Mokka DaemonSet (and its NRI plugin) to the worker(s) in the
+# "integration" GPU node pool — the same label the setup script applies.
+nodeSelector:
+  run.ai/simulated-gpu-node-pool: integration
+
+# NRI ambient injection: a node-local plugin appends Mokka's NVML overlay mount
+# + environment to each container at container-create time, so the real
+# `libnvidia-ml.so` appears inside ordinary GPU pods (e.g. a Kubeflow workspace)
+# — not just Mokka's own DaemonSet pod. Without this, a workspace pod still only
+# sees FGO's limited fake `nvidia-smi`.
+#
+# This REQUIRES containerd NRI to be enabled on the node (see
+# developing/kind-1-35.yaml `containerdConfigPatches`), which a running cluster
+# only picks up on recreate. It injects cluster-wide; pods opt out with the
+# annotation `nvml-mock.nvidia.com/inject: "false"`.
+nri:
+  enabled: true

@@ -1,0 +1,30 @@
+# Helm values for the run-ai/fake-gpu-operator (FGO) when Mokka (nvml-mock) is
+# layered on for real in-pod NVML — the ENABLE_FAKE_GPU_NVML=true path.
+#
+# This REPLACES fgo.values.yaml on that path (the setup script picks one or the
+# other). The difference from the plain path:
+#   - the "integration" pool is routed to Mokka with `backend: mock` and
+#     addressed by GPU *profile* (`gpuProfile`) rather than product string, and
+#   - FGO's builtin profiles are disabled so Mokka can own the profile
+#     ConfigMaps without a Helm cross-release ownership conflict.
+#
+# See NVIDIA/k8s-test-infra docs/guides/runai-fgo/README.md.
+
+# A single node pool named "integration", matched to the worker(s) via the
+# `run.ai/simulated-gpu-node-pool=integration` label the setup script applies.
+# `backend: mock` hands this pool to Mokka (real NVML); `gpuProfile: a100` must
+# match nvml-mock.values.yaml's `gpu.profile`.
+topology:
+  nodePools:
+    integration:
+      backend: mock
+      gpuCount: 1
+      gpuProfile: a100
+  nodePoolLabelKey: run.ai/simulated-gpu-node-pool
+
+# Mokka supplies the `gpu-profile-a100` ConfigMap FGO's loader reads; FGO's own
+# builtin set uses the same seven names and is owned by FGO's Helm release, so
+# leaving this enabled makes whichever chart installs second fail with
+# `invalid ownership metadata`. The two profile sets are alternatives.
+builtinProfiles:
+  enabled: false
