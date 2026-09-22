@@ -437,13 +437,21 @@ var _ = Describe("controller", Ordered, func() {
 			Eventually(rejectInvalidStatefulSetMetadataLabel, timeout, interval).Should(Succeed())
 
 			By("ensuring in-use imageConfig values cannot be removed from WorkspaceKind")
-			removeInUseImageConfig := func() error {
-				cmd := exec.Command("kubectl", "patch", "workspacekind", workspaceKindName,
-					"--type=json", "-p", `[{"op": "remove", "path": "/spec/podTemplate/options/imageConfig/values/1"}]`)
-				_, err := utils.Run(cmd)
-				return err
+			// the sample Workspace uses "jupyter-scipy:v1.10.0" (values/2); the "test" op pins the index to that id.
+			// NOTE: this value is also the default and a redirect target, so the rejection must be asserted
+			//       on the in-use message, otherwise the step would pass even without the in-use check
+			removeInUseImageConfig := func(g Gomega) {
+				inUseId := "jupyter-scipy:v1.10.0"
+				patch := fmt.Sprintf(`[
+					{"op": "test", "path": "/spec/podTemplate/options/imageConfig/values/2/id", "value": %q},
+					{"op": "remove", "path": "/spec/podTemplate/options/imageConfig/values/2"}
+				]`, inUseId)
+				cmd := exec.Command("kubectl", "patch", "workspacekind", workspaceKindName, "--type=json", "-p", patch)
+				output, err := utils.Run(cmd)
+				g.Expect(err).To(HaveOccurred(), "expected the webhook to reject removing an in-use imageConfig value")
+				g.Expect(output).To(ContainSubstring("imageConfig value %q is in use and cannot be removed", inUseId))
 			}
-			Eventually(removeInUseImageConfig, timeout, interval).ShouldNot(Succeed())
+			Eventually(removeInUseImageConfig, timeout, interval).Should(Succeed())
 
 			By("ensuring unused imageConfig values can be removed from WorkspaceKind")
 			removeUnusedImageConfig := func() error {
@@ -455,13 +463,20 @@ var _ = Describe("controller", Ordered, func() {
 			Eventually(removeUnusedImageConfig, timeout, interval).Should(Succeed())
 
 			By("ensuring in-use podConfig values cannot be removed from WorkspaceKind")
-			removeInUsePodConfig := func() error {
-				cmd := exec.Command("kubectl", "patch", "workspacekind", workspaceKindName,
-					"--type=json", "-p", `[{"op": "remove", "path": "/spec/podTemplate/options/podConfig/values/0"}]`)
-				_, err := utils.Run(cmd)
-				return err
+			// the sample Workspace uses "tiny_cpu" (values/0); the "test" op pins the index to that id.
+			// NOTE: this value is also the default, so the rejection must be asserted on the in-use message
+			removeInUsePodConfig := func(g Gomega) {
+				inUseId := "tiny_cpu"
+				patch := fmt.Sprintf(`[
+					{"op": "test", "path": "/spec/podTemplate/options/podConfig/values/0/id", "value": %q},
+					{"op": "remove", "path": "/spec/podTemplate/options/podConfig/values/0"}
+				]`, inUseId)
+				cmd := exec.Command("kubectl", "patch", "workspacekind", workspaceKindName, "--type=json", "-p", patch)
+				output, err := utils.Run(cmd)
+				g.Expect(err).To(HaveOccurred(), "expected the webhook to reject removing an in-use podConfig value")
+				g.Expect(output).To(ContainSubstring("podConfig value %q is in use and cannot be removed", inUseId))
 			}
-			Eventually(removeInUsePodConfig, timeout, interval).ShouldNot(Succeed())
+			Eventually(removeInUsePodConfig, timeout, interval).Should(Succeed())
 
 			By("ensuring unused podConfig values can be removed from WorkspaceKind")
 			removeUnusedPodConfig := func() error {
