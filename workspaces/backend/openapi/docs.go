@@ -1840,6 +1840,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/workspaces/{namespace}/{name}/createdresources": {
+            "get": {
+                "description": "Returns the resources which were created by the ServiceAccount of the workspace, in the namespace of the workspace. Only kinds of resources which both the backend and the user are allowed to list are returned.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workspaces"
+                ],
+                "summary": "List resources created by workspace",
+                "operationId": "listWorkspaceCreatedResources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "x-example": "kubeflow-user-example-com",
+                        "description": "Namespace of the workspace",
+                        "name": "namespace",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "x-example": "my-workspace",
+                        "description": "Name of the workspace",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation. Returns the resources created by the workspace.",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreatedResourceListEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized.",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Workspace not found.",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorEnvelope"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity. Validation error.",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/workspaces/{namespace}/{name}/podtemplate/details": {
             "get": {
                 "description": "Returns detail-level data for the workspace details overlay (volumes, secrets, pod info).",
@@ -2110,6 +2179,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/api.ErrorCauseOrigin"
                         }
                     ]
+                }
+            }
+        },
+        "api.CreatedResourceListEnvelope": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/createdresources.CreatedResource"
+                    }
                 }
             }
         },
@@ -2523,6 +2606,51 @@ const docTemplate = `{
                 },
                 "denyMessage": {
                     "$ref": "#/definitions/common.DenyMessage"
+                }
+            }
+        },
+        "createdresources.CreatedResource": {
+            "type": "object",
+            "required": [
+                "audit",
+                "deletionPolicy",
+                "group",
+                "kind",
+                "name",
+                "resource",
+                "version"
+            ],
+            "properties": {
+                "audit": {
+                    "$ref": "#/definitions/common.Audit"
+                },
+                "deletionPolicy": {
+                    "description": "DeletionPolicy is \"Delete\" if the resource is owned by the Workspace, and so is deleted with it.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1beta1.WorkspaceKindCreatedResourcesDeletionPolicy"
+                        }
+                    ]
+                },
+                "group": {
+                    "description": "Group is the API group of the resource, it is empty for the core API group.",
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "Kind is the kind of the resource.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the name of the resource.",
+                    "type": "string"
+                },
+                "resource": {
+                    "description": "Resource is the plural name of the kind of the resource, as used in URLs of the Kubernetes API.",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Version is the API version of the resource.",
+                    "type": "string"
                 }
             }
         },

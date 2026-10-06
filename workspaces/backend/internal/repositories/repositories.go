@@ -21,9 +21,11 @@ import (
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeflow/notebooks/workspaces/backend/internal/config"
+	"github.com/kubeflow/notebooks/workspaces/backend/internal/repositories/createdresources"
 	"github.com/kubeflow/notebooks/workspaces/backend/internal/repositories/health_check"
 	"github.com/kubeflow/notebooks/workspaces/backend/internal/repositories/metrics"
 	"github.com/kubeflow/notebooks/workspaces/backend/internal/repositories/namespaces"
@@ -37,15 +39,16 @@ import (
 
 // Repositories is a single convenient container to hold and represent all our repositories.
 type Repositories struct {
-	HealthCheck   *health_check.HealthCheckRepository
-	Metrics       *metrics.MetricsRepository
-	Namespace     *namespaces.NamespaceRepository
-	PVC           *pvcs.PVCRepository
-	Secret        *secrets.SecretRepository
-	StorageClass  *storageclasses.StorageClassRepository
-	Workspace     *workspaces.WorkspaceRepository
-	WorkspaceKind *workspacekinds.WorkspaceKindRepository
-	PodLogs       *podlogs.PodLogsRepository
+	CreatedResources *createdresources.CreatedResourcesRepository
+	HealthCheck      *health_check.HealthCheckRepository
+	Metrics          *metrics.MetricsRepository
+	Namespace        *namespaces.NamespaceRepository
+	PVC              *pvcs.PVCRepository
+	Secret           *secrets.SecretRepository
+	StorageClass     *storageclasses.StorageClassRepository
+	Workspace        *workspaces.WorkspaceRepository
+	WorkspaceKind    *workspacekinds.WorkspaceKindRepository
+	PodLogs          *podlogs.PodLogsRepository
 }
 
 // NewRepositories creates a new Repositories instance from a controller-runtime client.
@@ -55,6 +58,8 @@ func NewRepositories(
 	// configMapClient is a label-filtered cached client for image-source ConfigMaps
 	configMapClient client.Client,
 	clientset kubernetes.Interface,
+	// metadataClient lists the metadata of resources of any kind, it is not cached
+	metadataClient metadata.Interface,
 	logger *slog.Logger,
 ) *Repositories {
 	var discoveryClient discovery.DiscoveryInterface
@@ -62,14 +67,15 @@ func NewRepositories(
 		discoveryClient = clientset.Discovery()
 	}
 	return &Repositories{
-		HealthCheck:   health_check.NewHealthCheckRepository(cfg),
-		Metrics:       metrics.NewMetricsRepository(cfg, cl, discoveryClient, logger),
-		Namespace:     namespaces.NewNamespaceRepository(cfg, cl),
-		PVC:           pvcs.NewPVCRepository(cfg, cl),
-		Secret:        secrets.NewSecretRepository(cfg, cl),
-		StorageClass:  storageclasses.NewStorageClassRepository(cfg, cl),
-		Workspace:     workspaces.NewWorkspaceRepository(cfg, cl),
-		WorkspaceKind: workspacekinds.NewWorkspaceKindRepository(cfg, cl, configMapClient),
-		PodLogs:       podlogs.NewPodLogsRepository(cfg, cl, clientset),
+		CreatedResources: createdresources.NewCreatedResourcesRepository(cfg, cl, clientset, metadataClient, logger),
+		HealthCheck:      health_check.NewHealthCheckRepository(cfg),
+		Metrics:          metrics.NewMetricsRepository(cfg, cl, discoveryClient, logger),
+		Namespace:        namespaces.NewNamespaceRepository(cfg, cl),
+		PVC:              pvcs.NewPVCRepository(cfg, cl),
+		Secret:           secrets.NewSecretRepository(cfg, cl),
+		StorageClass:     storageclasses.NewStorageClassRepository(cfg, cl),
+		Workspace:        workspaces.NewWorkspaceRepository(cfg, cl),
+		WorkspaceKind:    workspacekinds.NewWorkspaceKindRepository(cfg, cl, configMapClient),
+		PodLogs:          podlogs.NewPodLogsRepository(cfg, cl, clientset),
 	}
 }

@@ -21,6 +21,11 @@ replacements:
     select:
       kind: ClusterRoleBinding
       name: workspaces-backend
+  - fieldPaths:
+    - subjects.[kind=ServiceAccount].namespace
+    select:
+      kind: ClusterRoleBinding
+      name: workspaces-backend-created-resources
 - source:
     fieldPath: metadata.name
     kind: Service

@@ -35,6 +35,10 @@ const (
 	LabelCanUpdate     = "notebooks.kubeflow.org/can-update"
 	LabelCanUse        = "notebooks.kubeflow.org/can-use"
 	LabelWorkspaceName = "notebooks.kubeflow.org/workspace-name"
+
+	// labels which the controller sets on the resources that the ServiceAccount of a Workspace creates
+	LabelCreatedByWorkspace    = "notebooks.kubeflow.org/created-by-workspace"
+	LabelCreatedByWorkspaceUID = "notebooks.kubeflow.org/created-by-workspace-uid"
 )
 
 // NewAuditFromObjectMeta creates an Audit instance from Kubernetes ObjectMeta.

@@ -32,6 +32,7 @@ const (
 	WorkspacePodTemplateDetailsPath      = WorkspacesByNamePath + "/podtemplate/details"
 	WorkspacePodTemplatePodLogsBatchPath = WorkspacesByNamePath + "/podtemplate/logs/batch"
 	WorkspacePodTemplateResourcesPath    = WorkspacesByNamePath + "/podtemplate/resources"
+	WorkspaceCreatedResourcesPath        = WorkspacesByNamePath + "/createdresources"
 
 	// workspacekinds
 	AllWorkspaceKindsPath            = PathPrefix + "/workspacekinds"

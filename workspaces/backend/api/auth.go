@@ -17,6 +17,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -66,4 +67,14 @@ func (a *App) requireAuth(w http.ResponseWriter, r *http.Request, policies []*au
 	}
 
 	return res.User, true
+}
+
+// isAuthorized reports whether the user is authorized to take the action specified by the given policy.
+// Unlike requireAuth, this method does not handle the request, so it can be used to decide what a response contains.
+func (a *App) isAuthorized(ctx context.Context, u user.Info, policy *auth.ResourcePolicy) (bool, error) {
+	authorized, _, err := a.RequestAuthZ.Authorize(ctx, policy.AttributesFor(u))
+	if err != nil {
+		return false, fmt.Errorf("failed to authorize request for user %q: %w", u.GetName(), err)
+	}
+	return authorized == authorizer.DecisionAllow, nil
 }

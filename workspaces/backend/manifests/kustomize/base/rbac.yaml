@@ -102,3 +102,60 @@ subjects:
 - kind: ServiceAccount
   name: workspaces-backend
   namespace: kubeflow-workspaces
+---
+## the kinds of resources which the backend may list, to show the resources created by a Workspace
+##  - only "list" is needed, the backend only ever reads the metadata of these resources
+##  - to show another kind of resource, create a ClusterRole with this label which grants "list" on it,
+##    for example, alongside the ClusterRole which lets a Workspace create that kind of resource
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: workspaces-backend-created-resources
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      notebooks.kubeflow.org/aggregate-to-backend-created-resources: "true"
+---
+## NOTE: pods, configmaps, secrets, and persistentvolumeclaims are already granted by `workspaces-backend`
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: workspaces-backend-created-resources-defaults
+  labels:
+    notebooks.kubeflow.org/aggregate-to-backend-created-resources: "true"
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - list
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: workspaces-backend-created-resources
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: workspaces-backend-created-resources
+subjects:
+- kind: ServiceAccount
+  name: workspaces-backend
+  namespace: kubeflow-workspaces

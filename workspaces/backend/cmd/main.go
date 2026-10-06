@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	application "github.com/kubeflow/notebooks/workspaces/backend/api"
@@ -161,6 +162,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create a client which lists the metadata of resources of any kind
+	metadataClient, err := metadata.NewForConfig(kubeconfig)
+	if err != nil {
+		logger.Error("failed to create Kubernetes metadata client", "error", err)
+		os.Exit(1)
+	}
+
 	// Create the request authenticator
 	reqAuthN, err := auth.NewRequestAuthenticator(cfg.UserIdHeader, cfg.UserIdPrefix, cfg.GroupsHeader)
 	if err != nil {
@@ -193,6 +201,7 @@ func main() {
 		reqAuthN,
 		reqAuthZ,
 		clientset,
+		metadataClient,
 	)
 	if err != nil {
 		logger.Error("failed to create app", "error", err)
