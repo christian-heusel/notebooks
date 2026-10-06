@@ -434,6 +434,18 @@ class WorkspaceDetailsDrawer {
     this.findResourcesTabContent().findByTestId(testId).should('exist');
   }
 
+  findCreatedResourcesTab() {
+    return this.find().findByTestId('created-resources-tab');
+  }
+
+  findCreatedResourcesTabContent() {
+    return this.find().findByTestId('created-resources-tab-content');
+  }
+
+  findCreatedResource(kind: string, name: string) {
+    return this.findCreatedResourcesTabContent().findByTestId(`created-resource-${kind}-${name}`);
+  }
+
   findResourceContainerSelect() {
     return this.findResourcesTabContent().findByTestId('resource-container-select');
   }
@@ -650,6 +662,10 @@ class DeleteModal {
 
   assertErrorAlertContainsMessage(message: string) {
     this.find().findByTestId('delete-modal-error-message').should('have.text', message);
+  }
+
+  findCreatedResourcesWarning() {
+    return this.find().findByTestId('delete-modal-created-resources-warning');
   }
 
   assertSubmitButtonEnabled() {

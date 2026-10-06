@@ -17,6 +17,7 @@ import { Title } from '@patternfly/react-core/dist/esm/components/Title';
 import { WorkspaceDetailsOverview } from '~/app/pages/Workspaces/Details/WorkspaceDetailsOverview';
 import { WorkspaceDetailsActions } from '~/app/pages/Workspaces/Details/WorkspaceDetailsActions';
 import { WorkspaceDetailsActivity } from '~/app/pages/Workspaces/Details/WorkspaceDetailsActivity';
+import { WorkspaceDetailsCreatedResources } from '~/app/pages/Workspaces/Details/WorkspaceDetailsCreatedResources';
 import { WorkspaceDetailsLogs } from '~/app/pages/Workspaces/Details/WorkspaceDetailsLogs';
 import { WorkspaceDetailsPodTemplate } from '~/app/pages/Workspaces/Details/WorkspaceDetailsPodTemplate';
 import { WorkspacesWorkspaceListItem } from '~/generated/data-contracts';
@@ -85,6 +86,13 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
             data-testid="resources-tab"
           />
           <Tab
+            eventKey={5}
+            title={<TabTitleText>Created resources</TabTitleText>}
+            tabContentId="createdResourcesTabContent"
+            aria-label="Created resources"
+            data-testid="created-resources-tab"
+          />
+          <Tab
             eventKey={3}
             title={<TabTitleText>Logs</TabTitleText>}
             tabContentId="logsTabContent"
@@ -148,6 +156,19 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
               detailsLoaded={detailsLoaded}
               detailsError={detailsError}
             />
+          </TabContentBody>
+        </TabContent>
+        <TabContent
+          key={5}
+          eventKey={5}
+          id="createdResourcesTabContent"
+          data-testid="created-resources-tab-content"
+          activeKey={activeTabKey}
+          hidden={activeTabKey !== 5}
+        >
+          <TabContentBody hasPadding>
+            {/* The resources are listed on demand, so they are only fetched once the tab is opened. */}
+            {activeTabKey === 5 && <WorkspaceDetailsCreatedResources workspace={workspace} />}
           </TabContentBody>
         </TabContent>
         <TabContent

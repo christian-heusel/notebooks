@@ -1,5 +1,6 @@
 import type { UserSettings } from 'mod-arch-core';
 import type {
+  ApiCreatedResourceListEnvelope,
   ApiErrorEnvelope,
   ApiNamespaceListEnvelope,
   ApiPodTemplateOptionsEnvelope,
@@ -90,6 +91,11 @@ declare global {
           type: 'GET /api/:apiVersion/workspaces/:namespace/:workspaceName/podtemplate/resources',
           options: { path: { apiVersion: string; namespace: string; workspaceName: string } },
           response: ApiWorkspaceResourceUsageEnvelope | ApiErrorEnvelope,
+        ) => Cypress.Chainable<null>) &
+        ((
+          type: 'GET /api/:apiVersion/workspaces/:namespace/:workspaceName/createdresources',
+          options: { path: { apiVersion: string; namespace: string; workspaceName: string } },
+          response: ApiCreatedResourceListEnvelope | ApiErrorEnvelope,
         ) => Cypress.Chainable<null>) &
         ((
           // The logs endpoint responds with a raw text/plain stream instead of an envelope.

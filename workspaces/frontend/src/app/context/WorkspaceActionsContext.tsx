@@ -9,7 +9,7 @@ import { useNamespaceSelectorWrapper } from '~/app/hooks/useNamespaceSelectorWra
 import { useNotebookAPI } from '~/app/hooks/useNotebookAPI';
 import { WorkspaceDetails } from '~/app/pages/Workspaces/Details/WorkspaceDetails';
 import { useTypedNavigate } from '~/app/routerHelper';
-import DeleteModal from '~/shared/components/DeleteModal';
+import { WorkspaceDeleteActionModal } from '~/app/pages/Workspaces/workspaceActions/WorkspaceDeleteActionModal';
 import { WorkspaceStartActionModal } from '~/app/pages/Workspaces/workspaceActions/WorkspaceStartActionModal';
 import { WorkspaceStopActionModal } from '~/app/pages/Workspaces/workspaceActions/WorkspaceStopActionModal';
 import { WorkspacesRedirectStep, WorkspacesWorkspaceListItem } from '~/generated/data-contracts';
@@ -269,11 +269,8 @@ export const WorkspaceActionsContextProvider: React.FC<WorkspaceActionsContextPr
                   />
                 )}
                 {activeWsAction.action === ActionType.Delete && (
-                  <DeleteModal
-                    isOpen
-                    resourceName={activeWsAction.workspace.name}
-                    namespace={activeWsAction.workspace.namespace}
-                    title="Delete workspace?"
+                  <WorkspaceDeleteActionModal
+                    workspace={activeWsAction.workspace}
                     onClose={() => setActiveWsAction(null)}
                     onDelete={async () => executeDeleteAction()}
                   />
