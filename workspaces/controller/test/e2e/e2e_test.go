@@ -97,6 +97,13 @@ const (
 	// probe test configs
 	probeWorkspaceKindName = "jupyterlab-probe"
 	probeWorkspaceName     = "jupyterlab-workspace-probe"
+
+	// created resources test configs
+	createdResourcesWorkspaceKindName = "jupyterlab-created-resources"
+	createdResourcesWorkspaceName     = "jupyterlab-workspace-created-resources"
+	createdResourcesRetainedConfigMap = "created-resources-retained"
+	createdResourcesDeletedConfigMap  = "created-resources-deleted"
+	createdResourcesWorkspaceLabel    = "notebooks.kubeflow.org/created-by-workspace"
 )
 
 var (
@@ -1523,6 +1530,158 @@ var _ = Describe("controller", Ordered, func() {
 			}
 			// It might take a few seconds for the first probe to run after reaching Running state
 			Eventually(verifyActivityUpdated, time.Minute, interval).Should(Succeed())
+		})
+	})
+
+	Context("Created Resources", func() {
+
+		AfterAll(func() {
+			By("deleting the created resources Workspace")
+			cmd := exec.Command("kubectl", "delete", "workspace", createdResourcesWorkspaceName,
+				"-n", workspaceNamespace, "--ignore-not-found=true", "--wait",
+				fmt.Sprintf("--timeout=%s", timeout),
+			)
+			_, _ = utils.Run(cmd)
+
+			By("deleting the created resources WorkspaceKind")
+			cmd = exec.Command("kubectl", "delete", "workspacekind", createdResourcesWorkspaceKindName,
+				"--ignore-not-found=true",
+			)
+			_, _ = utils.Run(cmd)
+
+			By("deleting the created ConfigMaps")
+			cmd = exec.Command("kubectl", "delete", "configmap",
+				createdResourcesRetainedConfigMap, createdResourcesDeletedConfigMap,
+				"-n", workspaceNamespace, "--ignore-not-found=true",
+			)
+			_, _ = utils.Run(cmd)
+		})
+
+		It("should garbage collect created resources with the Workspace when the deletion policy is Delete", func() {
+
+			serviceAccountUser := "system:serviceaccount:" + workspaceNamespace + ":ws-" + createdResourcesWorkspaceName
+
+			// createConfigMapAsWorkspace creates a ConfigMap as the ServiceAccount of the Workspace,
+			// and returns the value of the given jsonpath of the created ConfigMap
+			createConfigMapAsWorkspace := func(name, jsonPath string) (string, error) {
+				// a previous attempt may have created the ConfigMap before the webhook saw our changes
+				cmd := exec.Command("kubectl", "delete", "configmap", name,
+					"-n", workspaceNamespace, "--ignore-not-found=true")
+				if _, err := utils.Run(cmd); err != nil {
+					return "", err
+				}
+				cmd = exec.Command("kubectl", "create", "configmap", name,
+					"-n", workspaceNamespace, "--as", serviceAccountUser)
+				if _, err := utils.Run(cmd); err != nil {
+					return "", err
+				}
+				cmd = exec.Command("kubectl", "get", "configmap", name,
+					"-n", workspaceNamespace, "-o", "jsonpath="+jsonPath)
+				out, err := utils.Run(cmd)
+				return strings.TrimSpace(out), err
+			}
+
+			By("creating a WorkspaceKind which lets its Workspaces create resources")
+			workspaceKindYAML, err := utils.RenderActivityWorkspaceKind(
+				filepath.Join(projectDir, "manifests/kustomize/samples/jupyterlab_v1beta1_workspacekind.yaml"),
+				createdResourcesWorkspaceKindName,
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			applyWorkspaceKind := func() error {
+				cmd := exec.Command("kubectl", "apply", "-f", "-")
+				cmd.Stdin = strings.NewReader(workspaceKindYAML)
+				_, err := utils.Run(cmd)
+				return err
+			}
+			Eventually(applyWorkspaceKind, timeout, interval).Should(Succeed())
+
+			// NOTE: "edit" is one of the default ClusterRoles of Kubernetes, the deletion policy is
+			//       left unset, so the created resources are retained
+			patchClusterRoles := func() error {
+				cmd := exec.Command("kubectl", "patch", "workspacekind", createdResourcesWorkspaceKindName, "--type=merge",
+					"-p", `{"spec":{"podTemplate":{"serviceAccount":{"clusterRoles":[{"name":"edit"}]}}}}`)
+				_, err := utils.Run(cmd)
+				return err
+			}
+			Eventually(patchClusterRoles, timeout, interval).Should(Succeed())
+
+			By("creating a Workspace")
+			workspaceYAML, err := utils.RenderActivityWorkspace(
+				filepath.Join(projectDir, "manifests/kustomize/samples/jupyterlab_v1beta1_workspace.yaml"),
+				createdResourcesWorkspaceName,
+				createdResourcesWorkspaceKindName,
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			applyWorkspace := func() error {
+				cmd := exec.Command("kubectl", "apply", "-f", "-", "-n", workspaceNamespace)
+				cmd.Stdin = strings.NewReader(workspaceYAML)
+				_, err := utils.Run(cmd)
+				return err
+			}
+			Eventually(applyWorkspace, timeout, interval).Should(Succeed())
+
+			By("creating a ConfigMap as the ServiceAccount of the Workspace")
+			// NOTE: this is retried until the controller has created the ServiceAccount and its RoleBinding
+			createRetainedConfigMap := func(g Gomega) {
+				workspaceLabel, err := createConfigMapAsWorkspace(createdResourcesRetainedConfigMap,
+					fmt.Sprintf(`{.metadata.labels.%s}`, strings.ReplaceAll(createdResourcesWorkspaceLabel, ".", `\.`)))
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(workspaceLabel).To(Equal(createdResourcesWorkspaceName))
+			}
+			Eventually(createRetainedConfigMap, timeout, interval).Should(Succeed())
+
+			By("verifying the ConfigMap is not owned by the Workspace")
+			cmd := exec.Command("kubectl", "get", "configmap", createdResourcesRetainedConfigMap,
+				"-n", workspaceNamespace, "-o", "jsonpath={.metadata.ownerReferences}")
+			ownerReferences, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.TrimSpace(ownerReferences)).To(BeEmpty())
+
+			By("setting the deletion policy of the WorkspaceKind to Delete")
+			patchDeletionPolicy := func() error {
+				cmd := exec.Command("kubectl", "patch", "workspacekind", createdResourcesWorkspaceKindName, "--type=merge",
+					"-p", `{"spec":{"podTemplate":{"serviceAccount":{"createdResources":{"deletionPolicy":"Delete"}}}}}`)
+				_, err := utils.Run(cmd)
+				return err
+			}
+			Eventually(patchDeletionPolicy, timeout, interval).Should(Succeed())
+
+			By("creating a ConfigMap which is owned by the Workspace")
+			// NOTE: this is retried until the webhook has seen the new deletion policy
+			createDeletedConfigMap := func(g Gomega) {
+				ownerKinds, err := createConfigMapAsWorkspace(createdResourcesDeletedConfigMap,
+					"{.metadata.ownerReferences[*].kind}")
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ownerKinds).To(Equal("Workspace"))
+			}
+			Eventually(createDeletedConfigMap, timeout, interval).Should(Succeed())
+
+			By("deleting the Workspace")
+			cmd = exec.Command("kubectl", "delete", "workspace", createdResourcesWorkspaceName,
+				"-n", workspaceNamespace, "--wait",
+				fmt.Sprintf("--timeout=%s", timeout),
+			)
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("verifying the owned ConfigMap is garbage collected")
+			verifyConfigMapDeleted := func(g Gomega) {
+				cmd := exec.Command("kubectl", "get", "configmap", createdResourcesDeletedConfigMap,
+					"-n", workspaceNamespace, "--ignore-not-found=true", "-o", "name")
+				out, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(strings.TrimSpace(out)).To(BeEmpty())
+			}
+			Eventually(verifyConfigMapDeleted, timeout, interval).Should(Succeed())
+
+			By("verifying the retained ConfigMap still exists")
+			cmd = exec.Command("kubectl", "get", "configmap", createdResourcesRetainedConfigMap,
+				"-n", workspaceNamespace, "-o", "name")
+			out, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.TrimSpace(out)).To(Equal("configmap/" + createdResourcesRetainedConfigMap))
 		})
 	})
 })
