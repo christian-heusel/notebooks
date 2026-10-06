@@ -664,8 +664,12 @@ class DeleteModal {
     this.find().findByTestId('delete-modal-error-message').should('have.text', message);
   }
 
-  findCreatedResourcesWarning() {
-    return this.find().findByTestId('delete-modal-created-resources-warning');
+  findDeletedResourcesWarning() {
+    return this.find().findByTestId('delete-modal-deleted-resources-warning');
+  }
+
+  findRetainedResourcesWarning() {
+    return this.find().findByTestId('delete-modal-retained-resources-warning');
   }
 
   assertSubmitButtonEnabled() {

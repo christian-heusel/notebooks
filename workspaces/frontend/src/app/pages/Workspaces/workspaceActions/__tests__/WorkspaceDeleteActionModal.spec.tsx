@@ -55,26 +55,45 @@ describe('WorkspaceDeleteActionModal', () => {
     expect(screen.getByText('test-ns')).toBeInTheDocument();
   });
 
-  it('does not warn when no created resource is deleted with the workspace', () => {
-    renderModal([buildMockCreatedResource()]);
+  it('does not warn when the workspace has not created any resources', () => {
+    renderModal([]);
 
-    expect(screen.queryByTestId('delete-modal-created-resources-warning')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delete-modal-deleted-resources-warning')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delete-modal-retained-resources-warning')).not.toBeInTheDocument();
   });
 
   it('warns about the created resources which are deleted with the workspace', () => {
-    renderModal([buildMockCreatedResource(), deletedResource('job-1'), deletedResource('job-2')]);
+    renderModal([deletedResource('job-1'), deletedResource('job-2')]);
 
-    expect(screen.getByTestId('delete-modal-created-resources-warning')).toHaveTextContent(
+    expect(screen.getByTestId('delete-modal-deleted-resources-warning')).toHaveTextContent(
       '2 resources created by this workspace will also be deleted.',
     );
+    expect(screen.queryByTestId('delete-modal-retained-resources-warning')).not.toBeInTheDocument();
     expect(screen.getByText('test-workspace')).toBeInTheDocument();
   });
 
-  it('uses the singular for a single created resource', () => {
-    renderModal([deletedResource('job-1')]);
+  it('warns about the created resources which are retained', () => {
+    renderModal([buildMockCreatedResource({ name: 'job-1' })]);
 
-    expect(screen.getByTestId('delete-modal-created-resources-warning')).toHaveTextContent(
+    expect(screen.getByTestId('delete-modal-retained-resources-warning')).toHaveTextContent(
+      '1 resource created by this workspace will not be deleted and will remain in the namespace.',
+    );
+    expect(screen.queryByTestId('delete-modal-deleted-resources-warning')).not.toBeInTheDocument();
+    expect(screen.getByText('test-workspace')).toBeInTheDocument();
+  });
+
+  it('warns about both the deleted and the retained resources', () => {
+    renderModal([
+      buildMockCreatedResource({ name: 'job-1' }),
+      buildMockCreatedResource({ name: 'job-2' }),
+      deletedResource('job-3'),
+    ]);
+
+    expect(screen.getByTestId('delete-modal-deleted-resources-warning')).toHaveTextContent(
       '1 resource created by this workspace will also be deleted.',
+    );
+    expect(screen.getByTestId('delete-modal-retained-resources-warning')).toHaveTextContent(
+      '2 resources created by this workspace will not be deleted and will remain in the namespace.',
     );
   });
 
@@ -82,6 +101,7 @@ describe('WorkspaceDeleteActionModal', () => {
     renderModal([], false, new Error('boom'));
 
     expect(screen.getByTestId('delete-modal')).toBeInTheDocument();
-    expect(screen.queryByTestId('delete-modal-created-resources-warning')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delete-modal-deleted-resources-warning')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delete-modal-retained-resources-warning')).not.toBeInTheDocument();
   });
 });

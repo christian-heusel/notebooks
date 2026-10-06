@@ -128,10 +128,11 @@ describe('Workspace Created Resources Tab', () => {
 });
 
 describe('Workspace Delete Modal', () => {
-  it('should warn about the created resources which are deleted with the workspace', () => {
+  it('should warn about the created resources which are deleted and which are retained', () => {
     setupWorkspace(
       mockModArchResponse([
-        buildMockCreatedResource({ name: 'retained-job' }),
+        buildMockCreatedResource({ name: 'retained-job-1' }),
+        buildMockCreatedResource({ name: 'retained-job-2' }),
         buildMockCreatedResource({
           name: 'deleted-job',
           deletionPolicy:
@@ -144,17 +145,34 @@ describe('Workspace Delete Modal', () => {
     cy.wait('@getCreatedResources');
 
     deleteModal
-      .findCreatedResourcesWarning()
+      .findDeletedResourcesWarning()
       .should('contain.text', '1 resource created by this workspace will also be deleted.');
+    deleteModal
+      .findRetainedResourcesWarning()
+      .should(
+        'contain.text',
+        '2 resources created by this workspace will not be deleted and will remain in the namespace.',
+      );
   });
 
-  it('should not warn when no created resource is deleted with the workspace', () => {
+  it('should only warn about retained resources when none is deleted with the workspace', () => {
     setupWorkspace(mockModArchResponse([buildMockCreatedResource({ name: 'retained-job' })]));
 
     workspaces.findAction({ action: 'delete', workspaceName: TEST_WORKSPACE_NAME }).click();
     cy.wait('@getCreatedResources');
 
+    deleteModal.findRetainedResourcesWarning().should('exist');
+    deleteModal.findDeletedResourcesWarning().should('not.exist');
+  });
+
+  it('should not warn when the workspace has not created any resources', () => {
+    setupWorkspace(mockModArchResponse([]));
+
+    workspaces.findAction({ action: 'delete', workspaceName: TEST_WORKSPACE_NAME }).click();
+    cy.wait('@getCreatedResources');
+
     deleteModal.assertModalExists();
-    deleteModal.findCreatedResourcesWarning().should('not.exist');
+    deleteModal.findDeletedResourcesWarning().should('not.exist');
+    deleteModal.findRetainedResourcesWarning().should('not.exist');
   });
 });

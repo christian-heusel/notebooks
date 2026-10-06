@@ -14,18 +14,22 @@ interface WorkspaceDeleteActionModalProps {
   onDelete: () => Promise<void>;
 }
 
+const formatResourceCount = (count: number): string =>
+  `${count} ${count === 1 ? 'resource' : 'resources'}`;
+
 export const WorkspaceDeleteActionModal: React.FC<WorkspaceDeleteActionModalProps> = ({
   workspace,
   onClose,
   onDelete,
 }) => {
-  // NOTE: if the created resources fail to load, the workspace can still be deleted, just without the warning
+  // NOTE: if the created resources fail to load, the workspace can still be deleted, just without the warnings
   const [createdResources] = useWorkspaceCreatedResources(workspace.namespace, workspace.name);
   const deletedCount = createdResources.filter(
     (createdResource) =>
       createdResource.deletionPolicy ===
       V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy.WorkspaceKindCreatedResourcesDeletionPolicyDelete,
   ).length;
+  const retainedCount = createdResources.length - deletedCount;
 
   return (
     <DeleteModal
@@ -36,21 +40,34 @@ export const WorkspaceDeleteActionModal: React.FC<WorkspaceDeleteActionModalProp
       onClose={onClose}
       onDelete={onDelete}
       message={
-        deletedCount > 0 ? (
+        createdResources.length > 0 ? (
           <Stack hasGutter>
             <StackItem>
               Are you sure you want to delete <strong>{workspace.name}</strong> in namespace{' '}
               <strong>{workspace.namespace}</strong>?
             </StackItem>
-            <StackItem>
-              <Alert
-                variant="warning"
-                isInline
-                isPlain
-                title={`${deletedCount} ${deletedCount === 1 ? 'resource' : 'resources'} created by this workspace will also be deleted.`}
-                data-testid="delete-modal-created-resources-warning"
-              />
-            </StackItem>
+            {deletedCount > 0 && (
+              <StackItem>
+                <Alert
+                  variant="warning"
+                  isInline
+                  isPlain
+                  title={`${formatResourceCount(deletedCount)} created by this workspace will also be deleted.`}
+                  data-testid="delete-modal-deleted-resources-warning"
+                />
+              </StackItem>
+            )}
+            {retainedCount > 0 && (
+              <StackItem>
+                <Alert
+                  variant="warning"
+                  isInline
+                  isPlain
+                  title={`${formatResourceCount(retainedCount)} created by this workspace will not be deleted and will remain in the namespace.`}
+                  data-testid="delete-modal-retained-resources-warning"
+                />
+              </StackItem>
+            )}
           </Stack>
         ) : undefined
       }
