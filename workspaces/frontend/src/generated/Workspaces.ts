@@ -11,6 +11,7 @@
  */
 
 import {
+  ApiCreatedResourceListEnvelope,
   ApiErrorEnvelope,
   ApiWorkspaceActionPauseEnvelope,
   ApiWorkspaceCreateEnvelope,
@@ -194,6 +195,27 @@ export class Workspaces<SecurityDataType = unknown> extends HttpClient<SecurityD
       method: 'POST',
       body: body,
       type: ContentType.Json,
+      format: 'json',
+      ...params,
+    });
+  /**
+   * @description Returns the resources which were created by the ServiceAccount of the workspace, in the namespace of the workspace. Only kinds of resources which both the backend and the user are allowed to list are returned.
+   *
+   * @tags workspaces
+   * @name ListWorkspaceCreatedResources
+   * @summary List resources created by workspace
+   * @request GET:/workspaces/{namespace}/{name}/createdresources
+   * @response `200` `ApiCreatedResourceListEnvelope` Successful operation. Returns the resources created by the workspace.
+   * @response `401` `ApiErrorEnvelope` Unauthorized.
+   * @response `403` `ApiErrorEnvelope` Forbidden.
+   * @response `404` `ApiErrorEnvelope` Workspace not found.
+   * @response `422` `ApiErrorEnvelope` Unprocessable Entity. Validation error.
+   * @response `500` `ApiErrorEnvelope` Internal server error.
+   */
+  listWorkspaceCreatedResources = (namespace: string, name: string, params: RequestParams = {}) =>
+    this.request<ApiCreatedResourceListEnvelope, ApiErrorEnvelope>({
+      path: `/workspaces/${namespace}/${name}/createdresources`,
+      method: 'GET',
       format: 'json',
       ...params,
     });

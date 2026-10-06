@@ -31,6 +31,11 @@ export enum V1Beta1WorkspaceState {
   WorkspaceStateUnknown = 'Unknown',
 }
 
+export enum V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy {
+  WorkspaceKindCreatedResourcesDeletionPolicyRetain = 'Retain',
+  WorkspaceKindCreatedResourcesDeletionPolicyDelete = 'Delete',
+}
+
 export enum V1Beta1WorkspaceKindAssetMediaType {
   WorkspaceKindAssetMediaTypeSVG = 'image/svg+xml',
 }
@@ -274,6 +279,10 @@ export interface ApiConflictError {
   origin?: ApiErrorCauseOrigin;
 }
 
+export interface ApiCreatedResourceListEnvelope {
+  data: CreatedresourcesCreatedResource[];
+}
+
 export interface ApiErrorCause {
   /** ConflictCauses contains details about conflict errors that caused the request to fail. */
   conflict_cause?: ApiConflictError[];
@@ -420,6 +429,22 @@ export interface CommonPodMetadata {
 export interface CommonRestrictions {
   deny: boolean;
   denyMessage?: CommonDenyMessage;
+}
+
+export interface CreatedresourcesCreatedResource {
+  audit: CommonAudit;
+  /** DeletionPolicy is "Delete" if the resource is owned by the Workspace, and so is deleted with it. */
+  deletionPolicy: V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy;
+  /** Group is the API group of the resource, it is empty for the core API group. */
+  group: string;
+  /** Kind is the kind of the resource. */
+  kind: string;
+  /** Name is the name of the resource. */
+  name: string;
+  /** Resource is the plural name of the kind of the resource, as used in URLs of the Kubernetes API. */
+  resource: string;
+  /** Version is the API version of the resource. */
+  version: string;
 }
 
 export interface DetailsPodSecretInfo {
@@ -4278,6 +4303,20 @@ export interface V1Beta1WorkspaceKindClusterRole {
   name: string;
 }
 
+export interface V1Beta1WorkspaceKindCreatedResources {
+  /**
+   * what happens to the created resources when the Workspace is deleted (MUTABLE)
+   *  - "Retain": the resources are kept
+   *  - "Delete": the resources get an owner reference to the Workspace, so Kubernetes
+   *    garbage collects them with it, a single resource can still be kept by removing
+   *    that owner reference
+   *  - changes only apply to resources created afterwards, NOT to existing ones
+   * +kubebuilder:validation:Optional
+   * +kubebuilder:default:="Retain"
+   */
+  deletionPolicy?: V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy;
+}
+
 export interface V1Beta1WorkspaceKindPodMetadata {
   /**
    * annotations to be applied to the Pod resource
@@ -4450,6 +4489,15 @@ export interface V1Beta1WorkspaceKindServiceAccount {
    * +kubebuilder:example={{name: "kubeflow-edit"}}
    */
   clusterRoles?: V1Beta1WorkspaceKindClusterRole[];
+  /**
+   * configs for the resources which the ServiceAccount of each Workspace creates (MUTABLE)
+   *  - every namespaced resource which the ServiceAccount creates in the Namespace of its
+   *    Workspace is labeled with the name and UID of that Workspace:
+   *    "notebooks.kubeflow.org/created-by-workspace" and
+   *    "notebooks.kubeflow.org/created-by-workspace-uid"
+   * +kubebuilder:validation:Optional
+   */
+  createdResources?: V1Beta1WorkspaceKindCreatedResources;
 }
 
 export interface V1Beta1WorkspaceKindSpawner {

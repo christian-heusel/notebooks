@@ -19,6 +19,7 @@ import {
 } from '~/shared/mock/mockNotebookServiceData';
 import { buildAxiosError, isInvalidWorkspace, isInvalidYaml } from '~/shared/mock/mockUtils';
 import {
+  buildMockWorkspaceCreatedResources,
   buildMockWorkspaceDetails,
   buildMockWorkspaceKindUpdate,
   buildMockWorkspaceLogs,
@@ -83,6 +84,9 @@ export const mockNotebookApisImpl = (): NotebookApis => ({
       buildMockWorkspaceLogs(Math.min(query?.tailLines ?? 20, 50)),
     getWorkspacePodTemplateResources: async () => ({
       data: buildMockWorkspaceResourceUsage(),
+    }),
+    listWorkspaceCreatedResources: async () => ({
+      data: buildMockWorkspaceCreatedResources(),
     }),
     updateWorkspacePauseState: async (_namespace, _workspaceName, body) => {
       await delay(1500);

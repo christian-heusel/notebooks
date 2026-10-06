@@ -1,5 +1,6 @@
 import {
   ActionsWorkspaceActionPause,
+  CreatedresourcesCreatedResource,
   DetailsWorkspaceDetails,
   HealthCheckHealthCheck,
   HealthCheckServiceStatus,
@@ -39,6 +40,7 @@ import {
   WorkspacesWorkspaceCreate,
   WorkspacesWorkspaceKindInfo,
   WorkspacesWorkspaceListItem,
+  V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy,
   V1Beta1WorkspaceState,
   WorkspacekindsWorkspaceKindUpdate,
   WorkspacesWorkspaceUpdate,
@@ -1071,3 +1073,44 @@ export const buildMockWorkspaceResourceUsage = (
   },
   ...overrides,
 });
+
+export const buildMockCreatedResource = (
+  overrides?: Partial<CreatedresourcesCreatedResource>,
+): CreatedresourcesCreatedResource => ({
+  group: 'trainer.kubeflow.org',
+  version: 'v1alpha1',
+  resource: 'trainjobs',
+  kind: 'TrainJob',
+  name: 'my-train-job',
+  deletionPolicy:
+    V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy.WorkspaceKindCreatedResourcesDeletionPolicyRetain,
+  audit: {
+    createdAt: new Date(2025, 5, 1).toISOString(),
+    createdBy: '',
+    updatedAt: '',
+    updatedBy: '',
+    deletedAt: '',
+  },
+  ...overrides,
+});
+
+export const buildMockWorkspaceCreatedResources = (): CreatedresourcesCreatedResource[] => [
+  buildMockCreatedResource({
+    group: '',
+    version: 'v1',
+    resource: 'configmaps',
+    kind: 'ConfigMap',
+    name: 'my-config',
+  }),
+  buildMockCreatedResource({
+    group: '',
+    version: 'v1',
+    resource: 'persistentvolumeclaims',
+    kind: 'PersistentVolumeClaim',
+    name: 'my-dataset',
+  }),
+  buildMockCreatedResource({
+    deletionPolicy:
+      V1Beta1WorkspaceKindCreatedResourcesDeletionPolicy.WorkspaceKindCreatedResourcesDeletionPolicyDelete,
+  }),
+];

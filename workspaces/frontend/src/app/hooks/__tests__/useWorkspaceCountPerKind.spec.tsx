@@ -67,6 +67,7 @@ describe('useWorkspaceCountPerKind', () => {
       getWorkspacePodTemplateDetails: jest.fn(),
       getWorkspacePodTemplateLogsBatch: jest.fn(),
       getWorkspacePodTemplateResources: jest.fn(),
+      listWorkspaceCreatedResources: jest.fn(),
     },
     workspaceKinds: {
       listWorkspaceKinds: mockListWorkspaceKinds,
