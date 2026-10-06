@@ -373,7 +373,37 @@ type WorkspaceKindServiceAccount struct {
 	// +listMapKey:="name"
 	// +kubebuilder:example={{name: "kubeflow-edit"}}
 	ClusterRoles []WorkspaceKindClusterRole `json:"clusterRoles,omitempty"`
+
+	// configs for the resources which the ServiceAccount of each Workspace creates (MUTABLE)
+	//  - every namespaced resource which the ServiceAccount creates in the Namespace of its
+	//    Workspace is labeled with the name and UID of that Workspace:
+	//    "notebooks.kubeflow.org/created-by-workspace" and
+	//    "notebooks.kubeflow.org/created-by-workspace-uid"
+	// +kubebuilder:validation:Optional
+	CreatedResources *WorkspaceKindCreatedResources `json:"createdResources,omitempty"`
 }
+
+// WorkspaceKindCreatedResources configures how the resources which are created by the
+// ServiceAccount of a Workspace are handled.
+type WorkspaceKindCreatedResources struct {
+	// what happens to the created resources when the Workspace is deleted (MUTABLE)
+	//  - "Retain": the resources are kept
+	//  - "Delete": the resources get an owner reference to the Workspace, so Kubernetes
+	//    garbage collects them with it, a single resource can still be kept by removing
+	//    that owner reference
+	//  - changes only apply to resources created afterwards, NOT to existing ones
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:="Retain"
+	DeletionPolicy *WorkspaceKindCreatedResourcesDeletionPolicy `json:"deletionPolicy,omitempty"`
+}
+
+// +kubebuilder:validation:Enum:={"Retain","Delete"}
+type WorkspaceKindCreatedResourcesDeletionPolicy string
+
+const (
+	WorkspaceKindCreatedResourcesDeletionPolicyRetain WorkspaceKindCreatedResourcesDeletionPolicy = "Retain"
+	WorkspaceKindCreatedResourcesDeletionPolicyDelete WorkspaceKindCreatedResourcesDeletionPolicy = "Delete"
+)
 
 // WorkspaceKindClusterRole identifies a ClusterRole to bind to a Workspace's ServiceAccount
 // via a namespaced RoleBinding.

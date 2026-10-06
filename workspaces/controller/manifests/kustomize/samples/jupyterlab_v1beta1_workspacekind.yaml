@@ -182,6 +182,21 @@ spec:
     #  ##
     #  clusterRoles:
     #    - name: "kubeflow-view"
+    #
+    #  ## configs for the resources which the ServiceAccount of each Workspace creates (MUTABLE)
+    #  ##  - every namespaced resource which the ServiceAccount creates in the Namespace of
+    #  ##    its Workspace is labeled with the name and UID of that Workspace:
+    #  ##    "notebooks.kubeflow.org/created-by-workspace" and
+    #  ##    "notebooks.kubeflow.org/created-by-workspace-uid"
+    #  ##
+    #  createdResources:
+    #
+    #    ## what happens to the created resources when the Workspace is deleted
+    #    ##  - "Retain": the resources are kept (default)
+    #    ##  - "Delete": the resources are garbage collected with the Workspace
+    #    ##  - changes only apply to resources created afterwards, NOT to existing ones
+    #    ##
+    #    deletionPolicy: "Retain"
 
     ## activity probe configs (MUTABLE)
     ##  - determines how to detect activity in the Workspace

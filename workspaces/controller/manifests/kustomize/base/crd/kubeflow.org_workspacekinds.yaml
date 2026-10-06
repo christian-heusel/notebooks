@@ -5150,6 +5150,28 @@ spec:
                         x-kubernetes-list-map-keys:
                         - name
                         x-kubernetes-list-type: map
+                      createdResources:
+                        description: |-
+                          configs for the resources which the ServiceAccount of each Workspace creates (MUTABLE)
+                           - every namespaced resource which the ServiceAccount creates in the Namespace of its
+                             Workspace is labeled with the name and UID of that Workspace:
+                             "notebooks.kubeflow.org/created-by-workspace" and
+                             "notebooks.kubeflow.org/created-by-workspace-uid"
+                        properties:
+                          deletionPolicy:
+                            default: Retain
+                            description: |-
+                              what happens to the created resources when the Workspace is deleted (MUTABLE)
+                               - "Retain": the resources are kept
+                               - "Delete": the resources get an owner reference to the Workspace, so Kubernetes
+                                 garbage collects them with it, a single resource can still be kept by removing
+                                 that owner reference
+                               - changes only apply to resources created afterwards, NOT to existing ones
+                            enum:
+                            - Retain
+                            - Delete
+                            type: string
+                        type: object
                     type: object
                   statefulSetMetadata:
                     description: metadata for the Workspace StatefulSet (MUTABLE)

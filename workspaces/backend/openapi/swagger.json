@@ -7279,6 +7279,30 @@
                 }
             }
         },
+        "v1beta1.WorkspaceKindCreatedResources": {
+            "type": "object",
+            "properties": {
+                "deletionPolicy": {
+                    "description": "what happens to the created resources when the Workspace is deleted (MUTABLE)\n - \"Retain\": the resources are kept\n - \"Delete\": the resources get an owner reference to the Workspace, so Kubernetes\n   garbage collects them with it, a single resource can still be kept by removing\n   that owner reference\n - changes only apply to resources created afterwards, NOT to existing ones\n+kubebuilder:validation:Optional\n+kubebuilder:default:=\"Retain\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1beta1.WorkspaceKindCreatedResourcesDeletionPolicy"
+                        }
+                    ]
+                }
+            }
+        },
+        "v1beta1.WorkspaceKindCreatedResourcesDeletionPolicy": {
+            "type": "string",
+            "enum": [
+                "Retain",
+                "Delete"
+            ],
+            "x-enum-varnames": [
+                "WorkspaceKindCreatedResourcesDeletionPolicyRetain",
+                "WorkspaceKindCreatedResourcesDeletionPolicyDelete"
+            ]
+        },
         "v1beta1.WorkspaceKindPodMetadata": {
             "type": "object",
             "properties": {
@@ -7509,6 +7533,14 @@
                     "items": {
                         "$ref": "#/definitions/v1beta1.WorkspaceKindClusterRole"
                     }
+                },
+                "createdResources": {
+                    "description": "configs for the resources which the ServiceAccount of each Workspace creates (MUTABLE)\n - every namespaced resource which the ServiceAccount creates in the Namespace of its\n   Workspace is labeled with the name and UID of that Workspace:\n   \"notebooks.kubeflow.org/created-by-workspace\" and\n   \"notebooks.kubeflow.org/created-by-workspace-uid\"\n+kubebuilder:validation:Optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1beta1.WorkspaceKindCreatedResources"
+                        }
+                    ]
                 }
             }
         },
