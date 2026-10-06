@@ -86,7 +86,10 @@ var _ = BeforeSuite(func() {
 		BinaryAssetsDirectory: filepath.Join("..", "..", "bin", "k8s", fmt.Sprintf("1.31.0-%s-%s", runtime.GOOS, runtime.GOARCH)),
 
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "manifests", "kustomize", "base", "webhook", "manifests.yaml")},
+			Paths: []string{
+				filepath.Join("..", "..", "manifests", "kustomize", "base", "webhook", "manifests.yaml"),
+				filepath.Join("..", "..", "manifests", "kustomize", "base", "webhook", "mutating_webhook.yaml"),
+			},
 		},
 	}
 	var err error
@@ -144,6 +147,13 @@ var _ = BeforeSuite(func() {
 	err = (&WorkspaceKindValidator{
 		Client: k8sManager.GetClient(),
 		Scheme: k8sManager.GetScheme(),
+	}).SetupWebhookWithManager(k8sManager)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("setting up the CreatedResource webhook")
+	err = (&CreatedResourceMutator{
+		Client:    k8sManager.GetClient(),
+		APIReader: k8sManager.GetAPIReader(),
 	}).SetupWebhookWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 

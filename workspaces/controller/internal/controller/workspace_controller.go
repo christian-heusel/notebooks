@@ -860,7 +860,7 @@ func generateServiceAccountName(workspaceName string) string {
 	// NOTE: this name is deterministic, unlike the `metadata.generateName` used by the other owned
 	//       resources, because users and other controllers reference the ServiceAccount by name
 	//       (in RoleBindings, and in Istio AuthorizationPolicy principals)
-	name := fmt.Sprintf("ws-%s", workspaceName)
+	name := helper.WorkspaceServiceAccountNamePrefix + workspaceName
 	if len(name) <= maxServiceAccountNameLength {
 		return name
 	}

@@ -101,14 +101,14 @@ var _ = Describe("indexWorkspaceOwner", func() {
 	})
 })
 
-var _ = Describe("isWorkspaceControllerRef", func() {
+var _ = Describe("IsWorkspaceControllerRef", func() {
 	It("should return true for matching Group and Kind Workspace", func() {
 		ref := &metav1.OwnerReference{
 			APIVersion: "kubeflow.org/v1beta1",
 			Kind:       "Workspace",
 			Name:       "my-workspace",
 		}
-		Expect(isWorkspaceControllerRef(ref)).To(BeTrue())
+		Expect(IsWorkspaceControllerRef(ref)).To(BeTrue())
 	})
 
 	It("should return true across CRD API version skew within the kubeflow.org group", func() {
@@ -117,18 +117,18 @@ var _ = Describe("isWorkspaceControllerRef", func() {
 			Kind:       "Workspace",
 			Name:       "my-workspace",
 		}
-		Expect(isWorkspaceControllerRef(refAlpha)).To(BeTrue())
+		Expect(IsWorkspaceControllerRef(refAlpha)).To(BeTrue())
 
 		refV2 := &metav1.OwnerReference{
 			APIVersion: "kubeflow.org/v2",
 			Kind:       "Workspace",
 			Name:       "my-workspace",
 		}
-		Expect(isWorkspaceControllerRef(refV2)).To(BeTrue())
+		Expect(IsWorkspaceControllerRef(refV2)).To(BeTrue())
 	})
 
 	It("should return false when ref is nil", func() {
-		Expect(isWorkspaceControllerRef(nil)).To(BeFalse())
+		Expect(IsWorkspaceControllerRef(nil)).To(BeFalse())
 	})
 
 	It("should return false when APIVersion is empty", func() {
@@ -137,7 +137,7 @@ var _ = Describe("isWorkspaceControllerRef", func() {
 			Kind:       "Workspace",
 			Name:       "my-workspace",
 		}
-		Expect(isWorkspaceControllerRef(ref)).To(BeFalse())
+		Expect(IsWorkspaceControllerRef(ref)).To(BeFalse())
 	})
 
 	It("should return false when API group is different", func() {
@@ -146,7 +146,7 @@ var _ = Describe("isWorkspaceControllerRef", func() {
 			Kind:       "Workspace",
 			Name:       "my-workspace",
 		}
-		Expect(isWorkspaceControllerRef(refApps)).To(BeFalse())
+		Expect(IsWorkspaceControllerRef(refApps)).To(BeFalse())
 	})
 
 	It("should return false when Kind is different", func() {
@@ -155,7 +155,7 @@ var _ = Describe("isWorkspaceControllerRef", func() {
 			Kind:       "WorkspaceKind",
 			Name:       "my-kind",
 		}
-		Expect(isWorkspaceControllerRef(refKind)).To(BeFalse())
+		Expect(IsWorkspaceControllerRef(refKind)).To(BeFalse())
 	})
 
 	It("should return false when APIVersion is malformed", func() {
@@ -164,6 +164,6 @@ var _ = Describe("isWorkspaceControllerRef", func() {
 			Kind:       "Workspace",
 			Name:       "my-workspace",
 		}
-		Expect(isWorkspaceControllerRef(refInvalid)).To(BeFalse())
+		Expect(IsWorkspaceControllerRef(refInvalid)).To(BeFalse())
 	})
 })

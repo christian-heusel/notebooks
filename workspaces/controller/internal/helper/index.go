@@ -39,12 +39,17 @@ const (
 	IndexWorkspaceKindConfigMapImageSourceField = ".spec.configMapImageSource"
 
 	OwnerKindWorkspace = "Workspace"
+
+	// WorkspaceServiceAccountNamePrefix is the prefix of the name of the ServiceAccount of a Workspace.
+	// NOTE: the `matchConditions` of the created resource webhook select requests by this prefix, so it
+	//       MUST stay in sync with `manifests/kustomize/base/webhook/mutating_webhook.yaml`
+	WorkspaceServiceAccountNamePrefix = "ws-"
 )
 
-// isWorkspaceControllerRef reports whether the given owner reference points to a
+// IsWorkspaceControllerRef reports whether the given owner reference points to a
 // Workspace in the kubeflow.org API group. Version is intentionally ignored so
 // this predicate is stable across CRD version promotions (see issue#1198).
-func isWorkspaceControllerRef(ref *metav1.OwnerReference) bool {
+func IsWorkspaceControllerRef(ref *metav1.OwnerReference) bool {
 	if ref == nil {
 		return false
 	}
@@ -59,7 +64,7 @@ func isWorkspaceControllerRef(ref *metav1.OwnerReference) bool {
 // or nil if the object is not controlled by a Workspace.
 func indexWorkspaceOwner(rawObj client.Object) []string {
 	owner := metav1.GetControllerOf(rawObj)
-	if owner == nil || !isWorkspaceControllerRef(owner) {
+	if owner == nil || !IsWorkspaceControllerRef(owner) {
 		return nil
 	}
 	return []string{owner.Name}

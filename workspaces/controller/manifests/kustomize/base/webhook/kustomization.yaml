@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - manifests.yaml
+- mutating_webhook.yaml
 - service.yaml
 
 configurations:

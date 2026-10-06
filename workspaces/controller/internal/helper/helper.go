@@ -260,7 +260,7 @@ func ReplaceWorkspaceAsController(obj metav1.Object, workspace *kubefloworgv1bet
 	// the object is not controlled by the given workspace, we need to replace the controller reference
 	if currentController != nil {
 		// fail if the current controller is not a Workspace
-		if !isWorkspaceControllerRef(currentController) {
+		if !IsWorkspaceControllerRef(currentController) {
 			return false, fmt.Errorf("object %s/%s is controlled by %s/%s, which is not a Workspace",
 				obj.GetNamespace(), obj.GetName(), currentController.Kind, currentController.Name)
 		}

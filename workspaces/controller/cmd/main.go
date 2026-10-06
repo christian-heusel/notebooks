@@ -246,6 +246,13 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "WorkspaceKind")
 			os.Exit(1)
 		}
+		if err = (&webhookInternal.CreatedResourceMutator{
+			Client:    mgr.GetClient(),
+			APIReader: mgr.GetAPIReader(),
+		}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "CreatedResource")
+			os.Exit(1)
+		}
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
